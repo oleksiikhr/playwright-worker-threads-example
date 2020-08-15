@@ -1,0 +1,13 @@
+{
+  "name": "playwright-worker-threads-example",
+  "version": "1.0.0",
+  "main": "main.js",
+  "license": "MIT",
+  "scripts": {
+    "start": "node ./main.js"
+  },
+  "dependencies": {
+    "debug": "^4.1.1",
+    "playwright": "^1.3.0"
+  }
+}
