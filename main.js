@@ -41,7 +41,7 @@ for (let i = 0; i < threadsCount; i++) {
         const link = getLink()
         if (link) {
           set.add(link)
-          worker.postMessage(link)
+          worker.postMessage({ type: 'link', link })
         }
         break
       case 'new':
@@ -56,6 +56,10 @@ for (let i = 0; i < threadsCount; i++) {
         throw new Error(`${msg.type} type is unknown`)
     }
   })
+
+  worker.once('exit', (code) => {
+    console.log(`Worker ${i + 1} exited with code ${code}`)
+  })
 }
 
 function getLink() {
@@ -66,4 +70,12 @@ function getLink() {
   }
 
   return link
+}
+
+process.on('SIGTERM', cleanup)
+process.on('SIGINT', cleanup)
+
+function cleanup() {
+  debug('cleanup')
+  workers.forEach((worker) => worker.postMessage({ type: 'shutdown' }))
 }

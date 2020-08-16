@@ -2,24 +2,12 @@
 
 const { workerData, parentPort } = require('worker_threads')
 const { chromium } = require('playwright')
-const { log } = require('console')
 
 // Storage
 let necessaryTasks = workerData.runtimePages
 const timeoutCloseBrowser = 500
 let timeoutCloseBrowserFn
 let browser
-
-log(`Launch Thread: ${workerData.workerId}`)
-
-// Setting up communication with the Main Thread
-parentPort.on('message', (link) => {
-  if (necessaryTasks < 1) {
-    return
-  }
-
-  run(link)
-})
 
 function run(link) {
   clearTimeout(timeoutCloseBrowserFn)
@@ -82,9 +70,28 @@ function completeLink(link) {
   return parentPort.postMessage({ type: 'complete', workerId: workerData.workerId, link })
 }
 
+console.log(`Launch Thread: ${workerData.workerId}`)
+
 // Constantly checking if new tasks are needed
-setInterval(() => {
+const interval = setInterval(() => {
   if (necessaryTasks > 0) {
     getNewLink()
   }
 }, workerData.taskTimeout)
+
+// Setting up communication with the Main Thread
+parentPort.on('message', (msg) => {
+  switch (msg.type) {
+    case 'link':
+      if (necessaryTasks < 1) {
+        return
+      }
+
+      run(msg.link)
+      break
+    case 'shutdown':
+      clearInterval(interval)
+      browser.close().finally(() => process.exit(0))
+      break
+  }
+})
